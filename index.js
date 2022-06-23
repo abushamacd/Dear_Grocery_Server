@@ -4,6 +4,8 @@ const port = process.env.PORT || 5000;
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
+// JWT
+const jwt = require("jsonwebtoken");
 
 // Use Middleware
 app.use(cors());
@@ -22,6 +24,8 @@ async function run() {
   try {
     await client.connect();
     const productCollection = client.db("dearGrocery").collection("products");
+    const userCollection = client.db("dearGrocery").collection("users");
+
     //   get all products
     app.get("/product", async (req, res) => {
       const query = {};
@@ -29,6 +33,32 @@ async function run() {
       const services = await cursor.toArray();
       res.send(services);
     });
+
+    // Add and Update user
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      console.log(user);
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, {
+        expiresIn: "1d",
+      });
+      res.send({ result, token });
+    });
+
+    // Get specific user info
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      res.send(user);
+    });
+
+    //
   } finally {
     //   await client.close();
   }
