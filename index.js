@@ -3,7 +3,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 // JWT
 const jwt = require("jsonwebtoken");
 
@@ -128,6 +128,14 @@ async function run() {
       const cursor = productCollection.find(query);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    // Product Delete
+    app.delete("/product/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await productCollection.deleteOne(filter);
+      res.send(result);
     });
 
     //
