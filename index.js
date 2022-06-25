@@ -46,7 +46,6 @@ async function run() {
     // Admin varify
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
-      console.log("admin error", requester);
       const requesterAccount = await userCollection.findOne({
         email: requester,
       });
@@ -56,14 +55,6 @@ async function run() {
         res.status(403).send({ message: "forbidden" });
       }
     };
-
-    //   get all products
-    app.get("/product", async (req, res) => {
-      const query = {};
-      const cursor = productCollection.find(query);
-      const services = await cursor.toArray();
-      res.send(services);
-    });
 
     // Add and Update user
     app.put("/user/:email", async (req, res) => {
@@ -108,8 +99,6 @@ async function run() {
     // Admin check API
     app.get("/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      console.log("check", email);
-
       const user = await userCollection.findOne({ email: email });
       const isAdmin = user.role === "admin";
       res.send({ admin: isAdmin });
