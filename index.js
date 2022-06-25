@@ -11,6 +11,23 @@ const jwt = require("jsonwebtoken");
 app.use(cors());
 app.use(express.json());
 
+// JWT Verify
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  console.log(authHeader);
+  if (!authHeader) {
+    return res.status(401).send({ message: "UnAuthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 // Connect DB
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.oxc89.mongodb.net/?retryWrites=true&w=majority`;
@@ -19,6 +36,7 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
 // API
 async function run() {
   try {
@@ -38,7 +56,6 @@ async function run() {
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
-      console.log(user);
       const filter = { email: email };
       const options = { upsert: true };
       const updateDoc = {
@@ -56,6 +73,13 @@ async function run() {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
       res.send(user);
+    });
+
+    // get all user
+    // app.get("/user", verifyJWT, verifyAdmin, async (req, res) => {
+    app.get("/user", verifyJWT, async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
     });
 
     //
